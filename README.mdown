@@ -1,7 +1,9 @@
 SVGKit
 ======
 
-SVGKit is a Cocoa framework for rendering SVG files as Core Animation layers. All shapes are represented by instances of the `CAShapeLayer` class, and are, by design, animatable. SVGKit is compatible with the latest Mac OS X and iOS SDK's. To use SVGKit in your iOS application, simply drag the `Core` and `iOS` folders into your Xcode project. See `SVGPad` for a working sample. To use SVGKit in your Mac OS X application, build the SVGKit Xcode project and link your application against the built framework. Since `CAShapeLayer` does not support gradient fills, support for gradients has been temporarily removed.
+SVGKit is a Cocoa framework for rendering SVG files as Core Animation layers. All shapes are represented by instances of the `CAShapeLayer` class, and are, by design, animatable. SVGKit is compatible with the latest Mac OS X and iOS SDK's. To use SVGKit in your iOS application, simply drag the `Core` and `iOS` folders into your Xcode project. See `SVGPad` for a working sample. To use SVGKit in your Mac OS X application, build the SVGKit Xcode project and link your application against the built framework. 
+
+Preliminary support for linear gradient fills has been added.  Elements which use a linear gradient fill add a sublayer to their CAShapeLayer.  The sublayer is a CAGradientLayer with a CAShapeLayer mask that matches the shape to which the gradient is applied.
 
 Usage
 -----
