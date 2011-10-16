@@ -13,6 +13,7 @@
 typedef enum {
 	SVGFillTypeNone = 0,
 	SVGFillTypeSolid,
+    SVGFillTypeGradient,
 } SVGFillType;
 
 @interface SVGShapeElement : SVGElement < SVGLayeredElement > { }
@@ -21,6 +22,7 @@ typedef enum {
 
 @property (nonatomic, readonly) SVGFillType fillType;
 @property (nonatomic, readonly) SVGColor fillColor;
+@property (nonatomic, retain) SVGGradientElement *gradient;
 
 @property (nonatomic, readonly) CGFloat strokeWidth;
 @property (nonatomic, readonly) SVGColor strokeColor;

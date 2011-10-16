@@ -11,6 +11,7 @@
 #import "SVGDefsElement.h"
 #import "SVGDocument.h"
 #import "SVGElement+Private.h"
+#import "SVGGradientElement.h"
 
 @implementation SVGShapeElement
 
@@ -25,6 +26,8 @@
 @synthesize strokeColor = _strokeColor;
 
 @synthesize path = _path;
+
+@synthesize gradient = _gradient;
 
 - (void)finalize {
 	CGPathRelease(_path);
@@ -59,8 +62,31 @@
 			_fillType = SVGFillTypeNone;
 		}
 		else if (!strncmp(cvalue, "url", 3)) {
-			NSLog(@"Gradients are no longer supported");
-			_fillType = SVGFillTypeNone;
+			//NSLog(@"Gradients are no longer supported");
+			_fillType = SVGFillTypeGradient;
+            
+            // search the document for the matching gradient
+            NSMutableString *urlString = [[value stringByReplacingOccurrencesOfString:@"url(#" withString:@""] mutableCopy];
+            [urlString replaceCharactersInRange:NSMakeRange([urlString length] - 1, 1) withString:@""];
+            for (SVGElement *element in self.document.children)
+            {
+                if (![element isKindOfClass:[SVGGradientElement class]])
+                    continue;
+                
+                SVGGradientElement *g = (SVGGradientElement *)element;
+                if ([g.identifier isEqualToString:urlString])
+                {
+                    _gradient = [g retain];
+                    break;
+                }
+            }
+            
+            if (!_gradient)
+            {
+                NSLog(@"No gradient with id %@ found", urlString);
+                _fillType = SVGFillTypeNone;
+            }
+            [urlString release];
 		}
 		else {
 			_fillColor = SVGColorFromString([value UTF8String]);
@@ -128,23 +154,27 @@
 	CGPathRelease(path);
 	
 	shape.frame = rect;
+    
+    if ([shape respondsToSelector:@selector(setShouldRasterize:)]) {
+		[shape performSelector:@selector(setShouldRasterize:)
+					withObject:[NSNumber numberWithBool:YES]];
+	}
 	
 	if (_strokeWidth) {
 		shape.lineWidth = _strokeWidth;
 		shape.strokeColor = CGColorCreateWithSVGColor(_strokeColor);
 	}
 	
+
 	if (_fillType == SVGFillTypeNone) {
 		shape.fillColor = nil;
 	}
 	else if (_fillType == SVGFillTypeSolid) {
 		shape.fillColor = CGColorCreateWithSVGColor(_fillColor);
-	}
-	
-	if ([shape respondsToSelector:@selector(setShouldRasterize:)]) {
-		[shape performSelector:@selector(setShouldRasterize:)
-					withObject:[NSNumber numberWithBool:YES]];
-	}
+	} else if (_fillType == SVGFillTypeGradient) {
+        CALayer * gradientLayer = [_gradient layerWithShapeLayer:shape];
+        [shape addSublayer:gradientLayer];
+    }
 	
 	return shape;
 }

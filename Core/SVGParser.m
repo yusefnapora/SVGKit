@@ -22,6 +22,7 @@
 #import "SVGPolylineElement.h"
 #import "SVGRectElement.h"
 #import "SVGTitleElement.h"
+#import "SVGGradientElement.h"
 
 @interface SVGElement ()
 
@@ -69,7 +70,9 @@ static NSDictionary *elementMap;
 						   [SVGPolygonElement class], @"polygon",
 						   [SVGPolylineElement class], @"polyline",
 						   [SVGRectElement class], @"rect",
-						   [SVGTitleElement class], @"title", nil] retain];
+						   [SVGTitleElement class], @"title", 
+                           [SVGGradientElement class], @"linearGradient", 
+                           [SVGGradientStopElement class], @"stop", nil] retain];
 		}
 	}
 	return self;
