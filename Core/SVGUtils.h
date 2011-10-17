@@ -23,3 +23,5 @@ CGFloat SVGPercentageFromString (const char *string);
 
 CGMutablePathRef SVGPathFromPointsInString (const char *string, boolean_t close);
 CGColorRef CGColorCreateWithSVGColor (SVGColor color);
+
+CGAffineTransform SVGTransformFromString(NSString *string);

@@ -49,12 +49,32 @@
 	[super dealloc];
 }
 
+
+
 - (void)loadDefaults {
 	// to be overriden by subclasses
 }
 
 - (void)addChild:(SVGElement *)element {
 	[_children addObject:element];
+}
+
+- (SVGElement *)childWithId:(NSString *)elementId recursive:(BOOL)recursive
+{
+    for (SVGElement *element in self.children)
+    {
+        if ([element.identifier isEqualToString:elementId])
+        {
+            return element;
+        }
+        
+        if (recursive) {
+            SVGElement *e = [element childWithId:elementId recursive:YES];
+            if (e)
+                return e;
+        }
+    }
+    return nil;
 }
 
 - (void)parseAttributes:(NSDictionary *)attributes {
@@ -73,8 +93,8 @@
 }
 
 - (NSString *)description {
-	return [NSString stringWithFormat:@"<%@ %p | localName=%@ | stringValue=%@ | children=%d>", 
-			[self class], self, _localName, _stringValue, [_children count]];
+	return [NSString stringWithFormat:@"<%@ %p | localName=%@ | identifier=%@ | stringValue=%@ | children=%d>", 
+			[self class], self, _localName, _identifier, _stringValue, [_children count]];
 }
 
 @end

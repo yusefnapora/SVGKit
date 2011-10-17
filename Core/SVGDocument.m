@@ -12,6 +12,7 @@
 #import "SVGElement+Private.h"
 #import "SVGParser.h"
 #import "SVGTitleElement.h"
+#import "SVGGradientElement.h"
 
 @interface SVGDocument ()
 
@@ -123,6 +124,8 @@
 - (SVGDefsElement *)defs {
 	return (SVGDefsElement *) [self findFirstElementOfClass:[SVGDefsElement class]];
 }
+
+
 
 - (void)parseAttributes:(NSDictionary *)attributes {
 	[super parseAttributes:attributes];

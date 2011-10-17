@@ -10,21 +10,28 @@
 #import "SVGElement+Private.h"
 #import "SVGShapeElement+Private.h"
 #import "SVGUtils.h"
+#import "SVGPathParserHelper.h"
+#import <math.h>
 
 @interface SVGPathElement ()
 
+
+@property (nonatomic, assign) CGMutablePathRef CGPath;
 - (void)parseData:(NSString *)data;
+
+- (void) moveTo:(CGPoint)point relative:(BOOL)relative;
+- (void) lineTo:(CGPoint)point relative:(BOOL)relative;
+- (void) addCurve:(CGPoint)control1 control2:(CGPoint)control2 endPoint:(CGPoint)endPoint;
+- (void) closePath;
 
 @end
 
 
 @implementation SVGPathElement
 
-typedef enum {
-	SVGPathSegmentTypeMoveTo = 0,
-	SVGPathSegmentTypeLineTo,
-	SVGPathSegmentTypeCurve
-} SVGPathSegmentType;
+@synthesize CGPath;
+
+
 
 #define MAX_ACCUM 16
 
@@ -38,106 +45,196 @@ typedef enum {
 	}
 }
 
-- (void)parseData:(NSString *)data {
-	CGMutablePathRef path = CGPathCreateMutable();
-	
-	const char *cstr = [data UTF8String];
-	size_t len = strlen(cstr);
-	
-	SVGPathSegmentType type = -1;
-	
-	char accum[MAX_ACCUM];
-	bzero(accum, MAX_ACCUM);
-	
-	int accumIdx = 0, currComponent = 0;
-	
-	for (size_t n = 0; n <= len; n++) {
-		char c = cstr[n];
-		
-		if (c == '\n' || c == '\t' || c == ' ' || c == ',' || c == '\0') {
-			if (type != -1) {
-				accum[accumIdx] = '\0';
-				
-				if (type == SVGPathSegmentTypeMoveTo) {
-					static int x;
-					
-					if (currComponent == 0) {
-						x = atoi(accum);
-						currComponent++;
-					}
-					else if (currComponent == 1) {
-						CGPathMoveToPoint(path, NULL, x, atoi(accum));
-						type = -1;
-					}
-				}
-				else if (type == SVGPathSegmentTypeLineTo) {
-					static int x;
-					
-					if (currComponent == 0) {
-						x = atoi(accum);
-						currComponent++;
-					}
-					else if (currComponent == 1) {
-						CGPathAddLineToPoint(path, NULL, x, atoi(accum));
-						type = -1;
-					}
-				}
-				else if (type == SVGPathSegmentTypeCurve) {
-					static int x1, y1, x2, y2, x;
-					
-					if (currComponent == 0) {
-						x1 = atoi(accum);
-						currComponent++;
-					}
-					else if (currComponent == 1) {
-						y1 = atoi(accum);
-						currComponent++;
-					}
-					else if (currComponent == 2) {
-						x2 = atoi(accum);
-						currComponent++;
-					}
-					else if (currComponent == 3) {
-						y2 = atoi(accum);
-						currComponent++;
-					}
-					else if (currComponent == 4) {
-						x = atoi(accum);
-						currComponent++;
-					}
-					else if (currComponent == 5) {
-						CGPathAddCurveToPoint(path, NULL, x1, y1, x2, y2, x, atoi(accum));
-						type = -1;
-					}
-				}
-				
-				bzero(accum, MAX_ACCUM);
-				accumIdx = 0;
-			}
-		}
-		else if (c == 'M' || c == 'm') {
-			currComponent = 0;
-			type = SVGPathSegmentTypeMoveTo;
-		}
-		else if (c == 'L' || c == 'l') {
-			currComponent = 0;
-			type = SVGPathSegmentTypeLineTo;
-		}
-		else if (c == 'C' || c == 'c') {
-			currComponent = 0;
-			type = SVGPathSegmentTypeCurve;
-		}
-		else if (c == 'Z' || c == 'z') {
-			CGPathCloseSubpath(path);
-		}
-		else if ((c >= '0' && c <= '9') || c == '-') { // is digit?
-			accum[accumIdx++] = c;
-		}
-	}
-	
-	[self loadPath:path];
-	
-	CGPathRelease(path);
+- (void)parseData:(NSString *)string {
+
+    NSUInteger stringLength = [string length];
+    SVGPathParserHelper *parserHelper = [[SVGPathParserHelper alloc] initWithString:string position:0];
+    
+    [parserHelper skipWhitespace];
+    self.CGPath = CGPathCreateMutable();
+
+    float lastX = 0;
+    float lastY = 0;
+    float lastX1 = 0;
+    float lastY1 = 0;
+    
+    while (parserHelper.position < stringLength)
+    {
+        UniChar cmd = [string characterAtIndex:parserHelper.position];
+        [parserHelper advance];
+        BOOL wasCurve = NO;
+        switch (cmd)
+        {
+            case 'M':
+            case 'm':
+            {
+                float x = [parserHelper nextFloat];
+                float y = [parserHelper nextFloat];
+                BOOL relative = NO;
+                if (cmd == 'm') {
+                    relative = YES;
+                    lastX += x;
+                    lastY += y;
+                } else {
+                    lastX = x;
+                    lastY = y;
+                }
+                [self moveTo:CGPointMake(x, y) relative:relative];
+                break;
+            }
+            
+            case 'Z':
+            case 'z':
+            {
+                [self closePath];
+                break;
+            }
+                
+            case 'L':
+            case 'l':
+            {
+                float x = [parserHelper nextFloat];
+                float y = [parserHelper nextFloat];
+                BOOL relative = NO;
+                if (cmd == 'l') {
+                    relative = YES;
+                    lastX += x;
+                    lastY += y;
+                } else {
+                    lastX = x;
+                    lastY = y;
+                }
+                [self lineTo:CGPointMake(x, y) relative:relative];
+                break;
+            }
+                
+            case 'H':
+            case 'h':
+            {
+                float x = [parserHelper nextFloat];
+                if (cmd == 'h') {
+                    [self lineTo:CGPointMake(x, 0) relative:YES];
+                    lastX += x;
+                } else {
+                    [self lineTo:CGPointMake(x, lastY) relative:NO];
+                    lastX = x;
+                }
+                break;
+            }
+                
+            case 'V':
+            case 'v':
+            {
+                float y = [parserHelper nextFloat];
+                if (cmd == 'v') {
+                    [self lineTo:CGPointMake(0, y) relative:YES];
+                    lastY += y;
+                } else {
+                    [self lineTo:CGPointMake(lastX, y) relative:NO];
+                    lastY = y;
+                }
+                break;
+            }
+                
+            case 'C':
+            case 'c':
+            {
+                wasCurve = YES;
+                CGPoint c1 = CGPointMake([parserHelper nextFloat], [parserHelper nextFloat]);
+                CGPoint c2 = CGPointMake([parserHelper nextFloat], [parserHelper nextFloat]);
+                CGPoint pt = CGPointMake([parserHelper nextFloat], [parserHelper nextFloat]);
+                
+                if (cmd == 'c') {
+                    c1.x += lastX;
+                    c2.x += lastX;
+                    pt.x += lastX;
+                    c1.y += lastY;
+                    c2.y += lastY;
+                    pt.y += lastY;
+                }
+                [self addCurve:c1 control2:c2 endPoint:pt];
+                lastX1 = c2.x;
+                lastY1 = c2.y;
+                lastX = pt.x;
+                lastY = pt.y;
+                
+                break;
+            }
+                
+            case 'S':
+            case 's':
+            {
+                wasCurve = YES;
+                CGPoint c2 = CGPointMake([parserHelper nextFloat], [parserHelper nextFloat]);
+                CGPoint pt = CGPointMake([parserHelper nextFloat], [parserHelper nextFloat]);
+                if (cmd == 's') {
+                    c2.x += lastX;
+                    pt.x += lastX;
+                    c2.y += lastY;
+                    pt.y += lastY;
+                }
+                CGPoint c1 = CGPointMake(2 * lastX - lastX1, 2 * lastY - lastY1);
+                [self addCurve:c1 control2:c2 endPoint:pt];
+                lastX1 = c2.x;
+                lastY1 = c2.y;
+                lastX = pt.x;
+                lastY = pt.y;
+                
+                break;
+            }
+        }
+        
+        if (!wasCurve) {
+            lastX1 = lastX;
+            lastY1 = lastY;
+        }
+        [parserHelper skipWhitespace];
+    }
+    
+    [parserHelper release];
+    [self loadPath:self.CGPath];
+    CGPathRelease(self.CGPath);
+    self.CGPath = NULL;
+}
+
+- (void) moveTo:(CGPoint)point relative:(BOOL)relative
+{
+    if (relative)
+    {
+        if (!CGPathIsEmpty(self.CGPath))
+        {
+            CGPoint current = CGPathGetCurrentPoint(self.CGPath);
+            point.x += current.x;
+            point.y += current.y;
+        }
+    }
+    
+    CGPathMoveToPoint(self.CGPath, NULL, point.x, point.y);
+}
+
+- (void) lineTo:(CGPoint)point relative:(BOOL)relative
+{
+    if (relative)
+    {
+        if (!CGPathIsEmpty(self.CGPath))
+        {
+            CGPoint current = CGPathGetCurrentPoint(self.CGPath);
+            point.x += current.x;
+            point.y += current.y;
+        }
+    }
+    
+    CGPathAddLineToPoint(self.CGPath, NULL, point.x, point.y);
+}
+
+- (void) addCurve:(CGPoint)control1 control2:(CGPoint)control2 endPoint:(CGPoint)endPoint
+{
+    CGPathAddCurveToPoint(self.CGPath, NULL, control1.x, control1.y, control2.x, control2.y, endPoint.x, endPoint.y);
+}
+
+- (void) closePath
+{
+    CGPathCloseSubpath(self.CGPath);
 }
 
 @end

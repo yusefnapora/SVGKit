@@ -40,6 +40,10 @@
 		C972077D1347795300DE3BE3 /* Note.svg in Resources */ = {isa = PBXBuildFile; fileRef = C972077A1347795300DE3BE3 /* Note.svg */; };
 		C97207811347796E00DE3BE3 /* SVGView.m in Sources */ = {isa = PBXBuildFile; fileRef = C97207801347796E00DE3BE3 /* SVGView.m */; };
 		C9BB18AF1274A31400948CA8 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BB18AE1274A31400948CA8 /* libxml2.dylib */; };
+		CEDB785D144A273800236E07 /* SVGGradientElement.m in Sources */ = {isa = PBXBuildFile; fileRef = CEDB785C144A273800236E07 /* SVGGradientElement.m */; };
+		CEDB785F144AFF2000236E07 /* Gradient.svg in Resources */ = {isa = PBXBuildFile; fileRef = CEDB785E144AFF2000236E07 /* Gradient.svg */; };
+		CEDB7861144B156600236E07 /* snes0.svg in Resources */ = {isa = PBXBuildFile; fileRef = CEDB7860144B156600236E07 /* snes0.svg */; };
+		CEDB7864144B351200236E07 /* SVGPathParserHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = CEDB7863144B351100236E07 /* SVGPathParserHelper.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -104,6 +108,12 @@
 		C972077F1347796E00DE3BE3 /* SVGView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVGView.h; sourceTree = "<group>"; };
 		C97207801347796E00DE3BE3 /* SVGView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVGView.m; sourceTree = "<group>"; };
 		C9BB18AE1274A31400948CA8 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
+		CEDB785B144A273800236E07 /* SVGGradientElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVGGradientElement.h; sourceTree = "<group>"; };
+		CEDB785C144A273800236E07 /* SVGGradientElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVGGradientElement.m; sourceTree = "<group>"; };
+		CEDB785E144AFF2000236E07 /* Gradient.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Gradient.svg; sourceTree = "<group>"; };
+		CEDB7860144B156600236E07 /* snes0.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = snes0.svg; path = ../Samples/snes0.svg; sourceTree = "<group>"; };
+		CEDB7862144B351000236E07 /* SVGPathParserHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVGPathParserHelper.h; sourceTree = "<group>"; };
+		CEDB7863144B351100236E07 /* SVGPathParserHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVGPathParserHelper.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +179,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				CEDB7860144B156600236E07 /* snes0.svg */,
 				C97207771347795300DE3BE3 /* Samples */,
 				2804203B108E9BAB000629CD /* DetailView.xib */,
 				28AD735F0D9D9599002E5188 /* MainWindow.xib */,
@@ -231,6 +242,10 @@
 				C97207621347794300DE3BE3 /* SVGTitleElement.m */,
 				C97207631347794300DE3BE3 /* SVGUtils.h */,
 				C97207641347794300DE3BE3 /* SVGUtils.m */,
+				CEDB785B144A273800236E07 /* SVGGradientElement.h */,
+				CEDB785C144A273800236E07 /* SVGGradientElement.m */,
+				CEDB7862144B351000236E07 /* SVGPathParserHelper.h */,
+				CEDB7863144B351100236E07 /* SVGPathParserHelper.m */,
 			);
 			name = "SVGKit Core";
 			path = ../../Core;
@@ -239,6 +254,7 @@
 		C97207771347795300DE3BE3 /* Samples */ = {
 			isa = PBXGroup;
 			children = (
+				CEDB785E144AFF2000236E07 /* Gradient.svg */,
 				C97207781347795300DE3BE3 /* Lion.svg */,
 				C97207791347795300DE3BE3 /* Monkey.svg */,
 				C972077A1347795300DE3BE3 /* Note.svg */,
@@ -312,6 +328,8 @@
 				C972077B1347795300DE3BE3 /* Lion.svg in Resources */,
 				C972077C1347795300DE3BE3 /* Monkey.svg in Resources */,
 				C972077D1347795300DE3BE3 /* Note.svg in Resources */,
+				CEDB785F144AFF2000236E07 /* Gradient.svg in Resources */,
+				CEDB7861144B156600236E07 /* snes0.svg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,6 +363,8 @@
 				C97207751347794300DE3BE3 /* SVGTitleElement.m in Sources */,
 				C97207761347794300DE3BE3 /* SVGUtils.m in Sources */,
 				C97207811347796E00DE3BE3 /* SVGView.m in Sources */,
+				CEDB785D144A273800236E07 /* SVGGradientElement.m in Sources */,
+				CEDB7864144B351200236E07 /* SVGPathParserHelper.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -13,6 +13,7 @@
 #import "SVGElement+Private.h"
 #import "SVGGradientElement.h"
 
+
 @implementation SVGShapeElement
 
 #define IDENTIFIER_LEN 256
@@ -24,10 +25,11 @@
 
 @synthesize strokeWidth = _strokeWidth;
 @synthesize strokeColor = _strokeColor;
+@synthesize miterLimit = _miterLimit;
 
 @synthesize path = _path;
 
-@synthesize gradient = _gradient;
+@synthesize gradientId = _gradientId;
 
 - (void)finalize {
 	CGPathRelease(_path);
@@ -65,27 +67,10 @@
 			//NSLog(@"Gradients are no longer supported");
 			_fillType = SVGFillTypeGradient;
             
-            // search the document for the matching gradient
+            // save the url of the gradient for later. we look it up when our layer is requested, after the whole document is loaded
             NSMutableString *urlString = [[value stringByReplacingOccurrencesOfString:@"url(#" withString:@""] mutableCopy];
             [urlString replaceCharactersInRange:NSMakeRange([urlString length] - 1, 1) withString:@""];
-            for (SVGElement *element in self.document.children)
-            {
-                if (![element isKindOfClass:[SVGGradientElement class]])
-                    continue;
-                
-                SVGGradientElement *g = (SVGGradientElement *)element;
-                if ([g.identifier isEqualToString:urlString])
-                {
-                    _gradient = [g retain];
-                    break;
-                }
-            }
-            
-            if (!_gradient)
-            {
-                NSLog(@"No gradient with id %@ found", urlString);
-                _fillType = SVGFillTypeNone;
-            }
+            self.gradientId = urlString;
             [urlString release];
 		}
 		else {
@@ -97,6 +82,9 @@
 	if ((value = [attributes objectForKey:@"stroke-width"])) {
 		_strokeWidth = [value floatValue];
 	}
+    if ((value = [attributes objectForKey:@"stroke-miterlimit"])) {
+        _miterLimit = [value floatValue];
+    }
 	
 	if ((value = [attributes objectForKey:@"stroke"])) {
 		const char *cvalue = [value UTF8String];
@@ -132,6 +120,7 @@
 	}
 }
 
+
 - (CALayer *)layer {
 	CAShapeLayer *shape = [CAShapeLayer layer];
 	shape.name = self.identifier;
@@ -165,6 +154,9 @@
 		shape.strokeColor = CGColorCreateWithSVGColor(_strokeColor);
 	}
 	
+    if (_miterLimit) {
+        shape.miterLimit = _miterLimit;
+    }
 
 	if (_fillType == SVGFillTypeNone) {
 		shape.fillColor = nil;
@@ -172,7 +164,16 @@
 	else if (_fillType == SVGFillTypeSolid) {
 		shape.fillColor = CGColorCreateWithSVGColor(_fillColor);
 	} else if (_fillType == SVGFillTypeGradient) {
-        CALayer * gradientLayer = [_gradient layerWithShapeLayer:shape];
+        SVGElement *element = [self.document childWithId:self.gradientId recursive:YES];
+        if (!element || ![element isKindOfClass:[SVGGradientElement class]])
+        {
+            NSLog(@"No gradient found with id %@", self.gradientId);
+            _fillType = SVGFillTypeNone;
+            shape.fillColor = nil;
+            return shape;
+        }
+        SVGGradientElement *gradient = (SVGGradientElement *)element;
+        CALayer * gradientLayer = [gradient layerWithShapeLayer:shape];
         [shape addSublayer:gradientLayer];
     }
 	

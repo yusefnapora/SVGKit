@@ -28,6 +28,8 @@
 
 - (void)loadDefaults; // should be overriden to set element defaults
 
+- (SVGElement *) childWithId:(NSString *)elementId recursive:(BOOL)recursive;
+
 @end
 
 

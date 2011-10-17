@@ -22,8 +22,9 @@ typedef enum {
 
 @property (nonatomic, readonly) SVGFillType fillType;
 @property (nonatomic, readonly) SVGColor fillColor;
-@property (nonatomic, retain) SVGGradientElement *gradient;
+@property (nonatomic, retain) NSString *gradientId;
 
+@property (nonatomic, readonly) CGFloat miterLimit;
 @property (nonatomic, readonly) CGFloat strokeWidth;
 @property (nonatomic, readonly) SVGColor strokeColor;
 

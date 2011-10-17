@@ -19,6 +19,7 @@ typedef enum {
 @property (nonatomic, assign) CGPoint point1;
 @property (nonatomic, assign) CGPoint point2;
 @property (nonatomic, assign) SVGGradientUnitType gradientUnits;
+@property (nonatomic, assign) CGAffineTransform gradientTransform;
 
 - (CALayer *) layerWithShapeLayer:(CAShapeLayer *)shape;
 

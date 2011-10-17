@@ -420,3 +420,168 @@ CGColorRef CGColorCreateWithSVGColor (SVGColor color) {
 	
 	return outColor;
 }
+
+
+NSArray *NumbersParsedFromString(NSString *string)
+{
+    NSUInteger len = [string length];
+    NSUInteger pos = 0;
+    NSMutableArray *numbers = [NSMutableArray array];
+    BOOL skipChar = NO;
+    
+    for (int i = 1; i < len; i++)
+    {
+        if (skipChar) {
+            skipChar = NO;
+            continue;
+        }
+        
+        UniChar c = [string characterAtIndex:i];
+        switch (c) {
+                // This ends the parsing, as we are on the next element
+            case 'M':
+            case 'm':
+            case 'Z':
+            case 'z':
+            case 'L':
+            case 'l':
+            case 'H':
+            case 'h':
+            case 'V':
+            case 'v':
+            case 'C':
+            case 'c':
+            case 'S':
+            case 's':
+            case 'Q':
+            case 'q':
+            case 'T':
+            case 't':
+            case 'a':
+            case 'A':
+            case ')': {
+                NSRange substrRange = NSMakeRange(pos, i-pos);
+                NSString *str = [string substringWithRange:substrRange];
+                str = [str stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                if ([str length] > 0) {
+                    CGFloat f = [str floatValue];
+                    [numbers addObject:[NSNumber numberWithFloat:f]];
+                }
+                pos = i;
+                return numbers;
+            }
+            case '\n':
+            case '\t':
+            case ' ':
+            case ',':
+            case '-': {
+                NSRange substrRange = NSMakeRange(pos, i-pos);
+                NSString *str = [string substringWithRange:substrRange];
+                str = [str stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                // Just keep moving if multiple whitespace
+                if ([str length] > 0) {
+                    //Util.debug("  Next: " + str);
+                    CGFloat f = [str floatValue];
+                    [numbers addObject:[NSNumber numberWithFloat:f]];
+                    if (c == '-') {
+                        pos = i;
+                    } else {
+                        pos = i + 1;
+                        skipChar = true;
+                    }
+                } else {
+                    pos++;
+                }
+                break;
+            }
+        }
+    }
+    NSString *last = [string substringFromIndex:pos];
+    last = [last stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    if ([last length] > 0)
+    {
+        CGFloat f = [last floatValue];
+        [numbers addObject:[NSNumber numberWithFloat:f]];
+    }
+    return numbers;
+}
+
+CGAffineTransform SVGTransformFromString(NSString *string)
+{
+    NSRange searchRange = [string rangeOfString:@"matrix("];
+    if (searchRange.location == 0)
+    {
+        NSString *substr = [string substringFromIndex:searchRange.length];
+        NSArray *numbers = NumbersParsedFromString(substr);
+        if ([numbers count] == 6)
+        {
+            CGAffineTransform transform = CGAffineTransformMake([[numbers objectAtIndex:0] floatValue],
+                                                                [[numbers objectAtIndex:1] floatValue],
+                                                                [[numbers objectAtIndex:2] floatValue],
+                                                                [[numbers objectAtIndex:3] floatValue],
+                                                                [[numbers objectAtIndex:4] floatValue],
+                                                                [[numbers objectAtIndex:5] floatValue]);
+            return transform;
+        }
+    }
+    
+    searchRange = [string rangeOfString:@"translate("];
+    if (searchRange.location == 0)
+    {
+        NSString *substr = [string substringFromIndex:searchRange.length];
+        NSArray * numbers = NumbersParsedFromString(substr);
+        if ([numbers count] > 0)
+        {
+            CGFloat tx = [[numbers objectAtIndex:0] floatValue];
+            CGFloat ty = 0;
+            if ([numbers count] > 1)
+                ty = [[numbers objectAtIndex:1] floatValue];
+            
+            CGAffineTransform transform = CGAffineTransformMakeTranslation(tx, ty);
+            return transform;
+        }
+    }
+    
+    searchRange = [string rangeOfString:@"scale("];
+    if (searchRange.location == 0)
+    {
+        NSString *substr = [string substringFromIndex:searchRange.length];
+        NSArray * numbers = NumbersParsedFromString(substr);
+        if ([numbers count] > 0)
+        {
+            CGFloat sx = [[numbers objectAtIndex:0] floatValue];
+            CGFloat sy = 0;
+            if ([numbers count] > 1)
+                sy = [[numbers objectAtIndex:1] floatValue];
+            
+            CGAffineTransform transform = CGAffineTransformMakeScale(sx, sy);
+            return transform;
+        }
+    }
+    
+    
+    searchRange = [string rangeOfString:@"rotate("];
+    if (searchRange.location == 0)
+    {
+        NSString *substr = [string substringFromIndex:searchRange.length];
+        NSArray * numbers = NumbersParsedFromString(substr);
+        if ([numbers count] > 0)
+        {
+            CGFloat angle = [[numbers objectAtIndex:0] floatValue];
+            CGFloat cx = 0;
+            CGFloat cy = 0;
+            if ([numbers count] > 2) {
+                cx = [[numbers objectAtIndex:1] floatValue];
+                cy = [[numbers objectAtIndex:2] floatValue];
+            }
+            
+            CGAffineTransform transform = CGAffineTransformMakeTranslation(cx, cy);
+            CGAffineTransformRotate(transform, angle);
+            CGAffineTransformTranslate(transform, cx, cy);
+            
+            return transform;
+        }
+    }
+    
+    return CGAffineTransformIdentity;
+}

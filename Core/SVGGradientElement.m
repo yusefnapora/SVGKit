@@ -14,6 +14,7 @@
 @synthesize point1;
 @synthesize point2;
 @synthesize gradientUnits;
+@synthesize gradientTransform;
 
 - (void)parseAttributes:(NSDictionary *)attributes 
 {
@@ -50,10 +51,14 @@
     }
     
     value = nil;
+    self.gradientTransform = CGAffineTransformIdentity;
     if ((value = [attributes valueForKey:@"gradientTransform"]))
     {
-        NSLog(@"Gradient transforms are currently unsupported");
+        self.gradientTransform = SVGTransformFromString(value);
     }
+    
+    //NSLog(@"New Gradient: id: %@, start: %@ end: %@", self.identifier, NSStringFromCGPoint(point1), NSStringFromCGPoint(point2));
+    //NSLog(@"Attributes: %@", attributes);
 }
     
 - (CALayer *) layerWithShapeLayer:(CAShapeLayer *)shape
@@ -88,26 +93,46 @@
     // Set the gradient layer's start and end points.  If our gradientUnits property is 
     // SVGGradientUnitsUserSpace, we need to convert to a normalized unit coordinate space
     // where points are defined from 0.0 to 1.0.
-    CGPoint p1 = self.point1;
-    CGPoint p2 = self.point2;
+    CGPoint p1 = CGPointApplyAffineTransform(self.point1, self.gradientTransform);
+    CGPoint p2 = CGPointApplyAffineTransform(self.point2, self.gradientTransform);;
     
-    CGRect shapeRect = shape.frame;
+    //NSLog(@"--- %@ ---", self.identifier);
 
+    CGRect shapeRect;
     if (self.gradientUnits == SVGGradientUnitsUserSpace)
     {
-        CGFloat xMax = shapeRect.origin.x + shapeRect.size.width;
-        CGFloat yMax = shapeRect.origin.y + shapeRect.size.height;
-        
-        p1.x = p1.x / xMax;
-        p1.y = p1.y / yMax;
-        p2.x = p2.x / xMax;
-        p2.y = p2.y / yMax;
+        shapeRect = shape.frame;
+        p1.x -= shapeRect.origin.x;
+        p1.y -= shapeRect.origin.y;
+        p2.x -= shapeRect.origin.x;
+        p2.y -= shapeRect.origin.y;
+    } else if (self.gradientUnits == SVGGradientUnitsBoundingBox)
+    {
+        shapeRect = shape.bounds;
     }
+        
+    /*
+    NSLog(@"document bounds: %@", NSStringFromCGRect(coordinateSpace));
+    NSLog(@"shape frame: %@", NSStringFromCGRect(shape.frame));
+    NSLog(@"original points: 1: %@ 2: %@", NSStringFromCGPoint(point1), NSStringFromCGPoint(point2));
+    NSLog(@"transformed points: 1: %@ 2: %@", NSStringFromCGPoint(p1), NSStringFromCGPoint(p2));
+     */
+    
+    // Normalize the start and end points relative to the shape rect
+    CGFloat xMax = shapeRect.size.width;
+    CGFloat yMax = shapeRect.size.height;
+    
+    p1.x = p1.x / xMax;
+    p1.y = p1.y / yMax;
+    p2.x = p2.x / xMax;
+    p2.y = p2.y / yMax;
+    
+
+    //NSLog(@"normalized points: %@ / %@",  NSStringFromCGPoint(p1), NSStringFromCGPoint(p2));
+    
+
     layer.startPoint = p1;
     layer.endPoint = p2;
-    
-    //NSLog(@"Gradient p1: %@ p2: %@", NSStringFromCGPoint(self.point1), NSStringFromCGPoint(self.point2));
-    //NSLog(@"Layer startPoint: %@ endPoint: %@", NSStringFromCGPoint(p1), NSStringFromCGPoint(p1));
     
     // Make a copy of the shape layer and apply it as a mask to the gradient layer
     // CALayer doesn't have a -[copy] method, so we have to copy the properties we need
@@ -115,14 +140,11 @@
     CAShapeLayer *mask = [CAShapeLayer layer];
     mask.path = shape.path;
     mask.name = [NSString stringWithFormat:@"%@(%@)", shape.name, self.identifier];
-    mask.opacity = shape.opacity;
 
     
-    shapeRect.origin = CGPointZero;
-    layer.frame = shapeRect;
-    mask.frame = shapeRect;
+    layer.frame = shape.bounds;
+    mask.frame = shape.bounds;
     [layer setMask:mask];
-    [mask release];
     
     return layer;
 }
